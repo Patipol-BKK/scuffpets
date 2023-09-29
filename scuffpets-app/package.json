@@ -16,12 +16,17 @@
     "framer-motion": "^10.16.4",
     "next": "latest",
     "react": "latest",
-    "react-dom": "latest"
+    "react-dom": "latest",
+    "react-player": "^2.13.0",
+    "react-youtube": "^10.1.0",
+    "use-sound": "^4.0.1"
   },
   "devDependencies": {
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
-    "typescript": "latest"
+    "file-loader": "^6.2.0",
+    "typescript": "latest",
+    "url-loader": "^4.1.1"
   }
 }
