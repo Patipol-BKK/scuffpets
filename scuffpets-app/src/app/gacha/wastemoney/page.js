@@ -1,3 +1,5 @@
+'use client';
+
 import { ChakraProvider } from '@chakra-ui/react'
 import { Stack, HStack, VStack } from '@chakra-ui/react'
 import { Text, Center, Heading } from '@chakra-ui/react'
@@ -17,7 +19,41 @@ import { CloseButton } from '@chakra-ui/react'
 import { Button, ButtonGroup } from '@chakra-ui/react'
 import { Progress } from '@chakra-ui/react'
 
+import YouTube from 'react-youtube';
+import { AspectRatio } from '@chakra-ui/react'
+
+import { useState } from "react"
+
+let videoElement = null;
+
+import { Metadata } from 'next'
+
+
+
 export default function Page() {
+
+  const [playing, setPlaying] = useState(true)
+
+  const opts = {
+      height: '1',
+      width: '1',
+      playerVars: {
+        autoplay: 1,
+      },
+    }
+
+  function handleRoll() {
+    setPlaying(false)
+    console.log('you\'ve wasted money')
+    videoElement.target.setVolume(20)
+    videoElement.target.playVideo()
+  }
+
+  const _onReady = (event) => {
+    videoElement = event;
+    console.log('ready')
+  }
+
   return (
     <ChakraProvider>
     <Grid
@@ -29,7 +65,7 @@ export default function Page() {
       h='calc(100vh)'
       gap='1'
     >
-      <GridItem area={'info'}>
+      <GridItem bg='green' area={'info'}>
         <Box m='2' borderRadius='lg' borderWidth='2px' overflow='hidden' bg='BlackAlpha 50'>
           <Grid
             templateAreas={`"name raid"
@@ -93,7 +129,7 @@ export default function Page() {
           </Box>
         </HStack>
       </GridItem>
-      <GridItem bg='White' area={'pets'}>
+      <GridItem bg='yellow.100' area={'pets'}>
         <Box m='2' pl='2' borderWidth='5px' borderColor='Green'overflow='hidden'>
             <Text color='Black' fontWeight='bold'>pets</Text>
         </Box>
@@ -132,80 +168,62 @@ export default function Page() {
       </GridItem>
       <GridItem pl='2' area={'main'}>
         <Grid
-          templateAreas={`"main stats skills"`}
-          gridTemplateRows={'1fr'}
-          gridTemplateColumns={'1fr 1fr 1fr'}
+          templateAreas={`"roll help"`}
+          gridTemplateColumns={'1fr 50px'}
+          h='200px'
           gap='1'
           color='blackAlpha.000'
           fontWeight='bold'
         >
-          <GridItem p='2' area={'main'}>
-            <Card> 
-              <CardBody> 
-                <HStack align='top' p='2'>
-                  <Stack>
-                    <CloseButton bg='red.400'/>
-                    <Text color='Black' fontWeight='bold'>close</Text>
-                    <Button colorScheme='Black' variant='outline'>
-                      goto breeding
-                    </Button>
-                    <Button colorScheme='Black' variant='outline'>
-                      release
-                    </Button>
-                    <Button colorScheme='red' variant='outline'>
-                      idk
-                    </Button>
-                  </Stack>
-                  <Stack>
-                    <Heading>joe birden</Heading>
+          <GridItem bg='yellow' area={'roll'}>
+            <HStack align='top'>
+              <Image 
+                boxSize='500px'
+                src='/imgs/gachapon.png' 
+              />
+              <Stack flex='1'>
+                <Box m='2' pl='2' borderWidth='5px' borderColor='Black'overflow='hidden'>
+                  <Heading p='2' color='Black' fontWeight='bold'>the gachapon</Heading>
+                </Box>
+                <HStack align='top'>
+                  <Box
+                    as='button'
+                    onClick={handleRoll}
+                  >
                     <Image 
-                      boxSize='300px'
-                      src='/imgs/1.png' 
+                      boxSize='200px'
+                      src='/imgs/wastemoney.png' 
                     />
+                  </Box>
+                  <Box m='2' pl='2' borderWidth='5px' borderColor='Black'overflow='hidden'>
                     <HStack>
-                      <Tag size='sm' key='sm' variant='solid' colorScheme='teal'>
-                        currently
-                      </Tag>
-                      <Tag size='sm' key='sm' variant='solid' colorScheme='teal'>
-                        doing
-                      </Tag>
-                      <Tag size='sm' key='sm' variant='solid' colorScheme='teal'>
-                        your
-                      </Tag>
-                      <Tag size='sm' key='sm' variant='solid' colorScheme='teal'>
-                        mom 😠😠😠😠
-                      </Tag>
+                      <Text p='2' size='md' color='Black'>rolls left:</Text>
+                      <Text p='2' size='md' color='Black'>1/3</Text>
                     </HStack>
-                  </Stack>
+                    <HStack>
+                      <Text p='2' size='md' color='Black'>next roll in:</Text>
+                      <Text p='2' size='md' color='Black'>4:20:09</Text>
+                    </HStack>
+                    <YouTube 
+                      videoId='oKdcPG3T8lw'
+                      opts={opts}
+                      onReady={_onReady}
+                    />
+                  </Box>
                 </HStack>
-                <Card>
-                  <CardHeader>
-                    stats
-                  </CardHeader>
-                  <CardBody>
-                  <Stack m='1'>
-                    <Text>phys stam</Text>
-                    <Progress value={20} size='lg' colorScheme='red' />
-                    <Text>mental health</Text>
-                    <Progress value={20} size='lg' colorScheme='blue' />
-                    <Text>soup</Text>
-                    <Progress value={20} size='lg' colorScheme='yellow' />
-                  </Stack>
-                  </CardBody>
-                </Card>
-              </CardBody>
-            </Card>
-          </GridItem>
-
-          <GridItem p='2' area={'stats'}>
-            stats
-          </GridItem>
-          <GridItem p='2' area={'skills'}>
-            skills
+                <AspectRatio maxW='700px' ratio={310 / 166}>
+                  <Image
+                    src='/imgs/gacha_bg.png' 
+                  />
+                </AspectRatio>
+                
+              </Stack>
+            </HStack>
           </GridItem>
         </Grid>
       </GridItem>
     </Grid>
+    {/*<audio ref={audioRef} src='/static/gacha_bgm.mp3' />*/}
     </ChakraProvider>
     )
 }

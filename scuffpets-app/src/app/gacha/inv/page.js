@@ -1,5 +1,3 @@
-'use client';
-
 import { ChakraProvider } from '@chakra-ui/react'
 import { Stack, HStack, VStack } from '@chakra-ui/react'
 import { Text, Center, Heading } from '@chakra-ui/react'
@@ -19,36 +17,7 @@ import { CloseButton } from '@chakra-ui/react'
 import { Button, ButtonGroup } from '@chakra-ui/react'
 import { Progress } from '@chakra-ui/react'
 
-import YouTube from 'react-youtube';
-import { AspectRatio } from '@chakra-ui/react'
-
-import { useState } from "react"
-
-let videoElement: YouTubePlayer = null;
-
 export default function Page() {
-
-  const [playing, setPlaying] = useState(true)
-
-  const opts = {
-      height: '1',
-      width: '1',
-      playerVars: {
-        autoplay: 1,
-      },
-    }
-
-  function handleRoll() {
-    setPlaying(false)
-    console.log('you\'ve wasted money')
-    videoElement.target.playVideo()
-  }
-
-  const _onReady = (event: YouTubePlayer) => {
-    videoElement = event;
-    console.log('ready')
-  }
-
   return (
     <ChakraProvider>
     <Grid
@@ -60,7 +29,7 @@ export default function Page() {
       h='calc(100vh)'
       gap='1'
     >
-      <GridItem bg='green' area={'info'}>
+      <GridItem area={'info'}>
         <Box m='2' borderRadius='lg' borderWidth='2px' overflow='hidden' bg='BlackAlpha 50'>
           <Grid
             templateAreas={`"name raid"
@@ -124,7 +93,7 @@ export default function Page() {
           </Box>
         </HStack>
       </GridItem>
-      <GridItem bg='yellow.100' area={'pets'}>
+      <GridItem bg='White' area={'pets'}>
         <Box m='2' pl='2' borderWidth='5px' borderColor='Green'overflow='hidden'>
             <Text color='Black' fontWeight='bold'>pets</Text>
         </Box>
@@ -163,62 +132,86 @@ export default function Page() {
       </GridItem>
       <GridItem pl='2' area={'main'}>
         <Grid
-          templateAreas={`"roll help"`}
-          gridTemplateColumns={'1fr 50px'}
-          h='200px'
+          templateAreas={`"main stats skills"`}
+          gridTemplateRows={'1fr'}
+          gridTemplateColumns={'1fr 1fr 1fr'}
           gap='1'
           color='blackAlpha.000'
           fontWeight='bold'
         >
-          <GridItem bg='yellow' area={'roll'}>
-            <HStack align='top'>
-              <Image 
-                boxSize='500px'
-                src='/imgs/gachapon.png' 
-              />
-              <Stack flex='1'>
-                <Box m='2' pl='2' borderWidth='5px' borderColor='Black'overflow='hidden'>
-                  <Heading p='2' color='Black' fontWeight='bold'>the gachapon</Heading>
-                </Box>
-                <HStack align='top'>
-                  <Box
-                    as='button'
-                    onClick={handleRoll}
-                  >
+          <GridItem p='2' area={'main'}>
+            <Card> 
+              <CardBody> 
+                <HStack align='top' p='2'>
+                  <Stack>
+                    <CloseButton bg='red.400'/>
+                    <Text color='Black' fontWeight='bold'>close</Text>
+                    <Button colorScheme='Black' variant='outline'>
+                      goto breeding
+                    </Button>
+                    <Button colorScheme='Black' variant='outline'>
+                      release
+                    </Button>
+                    <Button colorScheme='red' variant='outline'>
+                      idk
+                    </Button>
+                  </Stack>
+                  <Stack>
+                    <Heading>joe birden</Heading>
                     <Image 
-                      boxSize='200px'
-                      src='/imgs/wastemoney.png' 
+                      boxSize='300px'
+                      src='/imgs/1.png' 
                     />
-                  </Box>
-                  <Box m='2' pl='2' borderWidth='5px' borderColor='Black'overflow='hidden'>
                     <HStack>
-                      <Text p='2' size='md' color='Black'>rolls left:</Text>
-                      <Text p='2' size='md' color='Black'>1/3</Text>
+                      <Tag size='sm' key='sm' variant='solid' colorScheme='teal'>
+                        currently
+                      </Tag>
+                      <Tag size='sm' key='sm' variant='solid' colorScheme='teal'>
+                        doing
+                      </Tag>
+                      <Tag size='sm' key='sm' variant='solid' colorScheme='teal'>
+                        your
+                      </Tag>
+                      <Tag size='sm' key='sm' variant='solid' colorScheme='teal'>
+                        mom 😠😠😠😠
+                      </Tag>
                     </HStack>
-                    <HStack>
-                      <Text p='2' size='md' color='Black'>next roll in:</Text>
-                      <Text p='2' size='md' color='Black'>4:20:09</Text>
-                    </HStack>
-                    <YouTube 
-                      videoId='oKdcPG3T8lw'
-                      opts={opts}
-                      onReady={_onReady}
-                    />
-                  </Box>
+                  </Stack>
                 </HStack>
-                <AspectRatio maxW='700px' ratio={310 / 166}>
-                  <Image
-                    src='/imgs/gacha_bg.png' 
-                  />
-                </AspectRatio>
-                
-              </Stack>
-            </HStack>
+                <Card>
+                  <CardHeader>
+                    stats
+                  </CardHeader>
+                  <CardBody>
+                  <Stack m='1'>
+                    <Text>phys stam</Text>
+                    <Progress value={89} size='lg' colorScheme='red' />
+                    <Text color='gray'>89</Text>
+                    <Text>mental health</Text>
+                    <Progress value={46} size='lg' colorScheme='blue' />
+                    <Text color='gray'>46</Text>
+                    <Text>soup</Text>
+                    <Progress value={7} size='lg' colorScheme='yellow' />
+                    <Text color='gray'>7</Text>
+                    <Text>percentage of becoming the next president</Text>
+                    <Progress value={98} size='lg' colorScheme='green' />
+                    <Text color='gray'>98</Text>
+                  </Stack>
+                  </CardBody>
+                </Card>
+              </CardBody>
+            </Card>
+          </GridItem>
+
+          <GridItem p='2' area={'stats'}>
+            stats
+          </GridItem>
+          <GridItem p='2' area={'skills'}>
+            skills
           </GridItem>
         </Grid>
       </GridItem>
     </Grid>
-    {/*<audio ref={audioRef} src='/static/gacha_bgm.mp3' />*/}
     </ChakraProvider>
     )
 }
