@@ -3,7 +3,7 @@ const TWO_STAR_PERCENT = 25;
 const THREE_STAR_PERCENT = 5;
 
 // Performs a standard 10 roll gacha. 9 rolls are selected from the whole pool, while 1 is a guaranteed 3*.
-function get10Roll() {
+function get10Roll(pool) {
   var ret = [];
 
   var num1 = 0;
@@ -16,9 +16,9 @@ function get10Roll() {
     else num1++;
   }
 
-  ret.push(...getOutcomes(num1, getGachaPool(1)));
-  ret.push(...getOutcomes(num2, getGachaPool(2)));
-  ret.push(...getOutcomes(num3, getGachaPool(3)));
+  ret.push(...getOutcomes(num1, getGachaPool(1, pool)));
+  ret.push(...getOutcomes(num2, getGachaPool(2, pool)));
+  ret.push(...getOutcomes(num3, getGachaPool(3, pool)));
 
   return ret;
 }
@@ -40,7 +40,7 @@ function getOutcomes(x, arr) {
 }
 // Get an array of the available gachas for a given star level.
 // TODO: replace with actual lookups.
-function getGachaPool(numStars) {
+function getGachaPool(numStars, pool) {
   const oneStars = [
     "Neuro-sama (Ethical)",
     "Ninomae Ina'nis",
@@ -96,15 +96,79 @@ function getGachaPool(numStars) {
 
   switch (numStars) {
     case 1:
-      return oneStars;
+      return pool.oneStars;
     case 2:
-      return twoStars;
+      return pool.twoStars;
     case 3:
-      return threeStars;
+      return pool.threeStars;
     default:
       console.log("U DONE FUCKED UP IN src\\app\\gacha\\wastemoney\\roll.js:getGachaPool: numStars was %d", numStars);
   }
 }
+const testRoll = [
+  {
+    name: 'apple soup',
+    numStars: 1,
+    type1: 'apple',
+    type2: 'soup'
+  },
+  {
+    name: 'Teemo',
+    numStars: 2,
+    type1: 'Prophet',
+    type2: 'Prophet'
+  },
+  {
+    name: 'Mud Golem',
+    numStars: 3,
+    type1: '123456',
+    type2: '751'
+  },
+  {
+    name: 'Bad Apple!!',
+    numStars: 4,
+    type1: 'abbbb',
+    type2: '751'
+  },
+  {
+    name: 'Amish Made Wooden Horse',
+    numStars: 5,
+    type1: 'abbbb',
+    type2: '751'
+  },
+  {
+    name: 'Bad Apple!!',
+    numStars: 1,
+    type1: 'abbbb',
+    type2: '751'
+  },
+  {
+    name: 'Bad Apple!!',
+    numStars: 1,
+    type1: 'abbbb',
+    type2: '751'
+  },
+  {
+    name: 'Bad Apple!!',
+    numStars: 1,
+    type1: 'abbbb',
+    type2: '751'
+  },
+  {
+    name: 'Bad Apple!!',
+    numStars: 1,
+    type1: 'abbbb',
+    type2: '751'
+  },
+  {
+    name: 'Bad Apple!!',
+    numStars: 1,
+    type1: 'abbbb',
+    type2: '751'
+  },
+]
+
+export { get10Roll, testRoll }
 
 /* ----- TESTS ----- */
 /* 
