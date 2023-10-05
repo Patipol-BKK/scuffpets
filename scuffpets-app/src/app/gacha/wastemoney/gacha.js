@@ -1,19 +1,31 @@
 "use client"
+
+// Import Chakra UI elements
 import { Grid, GridItem, HStack, Image, Stack, Box, Heading, Text } from '@chakra-ui/react'
 
 // Import roll functions
 import { DisplayRolls } from './display-rolls.js'
 import { testRoll } from './roll.js'
-
 import { RollButton } from './roll-button.js'
 
-export function Gacha(props) {
-  var currentRoll = testRoll
+// Import for rerendering
+import { useState } from 'react'
 
+var currentRoll = undefined
+
+export function Gacha(props) {
+
+  // Updating key forces rerendering components that contains it
+  const [key, setKey] = useState(0);
+
+  // Callback function for when rolled character is retrieved
+  // Updates currentRoll and rerender DisplayRoll to show current characters
   function handleRoll(rolledCharacters) {
     currentRoll = rolledCharacters
     console.log(rolledCharacters)
+    setKey(currentKey => currentKey+1)
   }
+
   return(
     <Grid
     templateAreas={`"roll help"`}
@@ -26,7 +38,8 @@ export function Gacha(props) {
       <GridItem bg='yellow' area={'roll'}>
         <HStack align='top'>
         <Image 
-          boxSize='500px'
+          width='300px'
+          height='400px'
           src='/imgs/gachapon.png' 
         />
         <Stack flex='1'>
@@ -35,7 +48,6 @@ export function Gacha(props) {
           </Box>
           <HStack align='top'>
           <RollButton
-            pool = {props.pool}
             onPressed = {handleRoll}
           />
           <Box m='2' pl='2' borderWidth='5px' borderColor='Black'overflow='hidden'>
@@ -50,6 +62,7 @@ export function Gacha(props) {
           </Box>
           </HStack>
           <DisplayRolls
+            key={key}
             rolls={currentRoll}
           />
         </Stack>

@@ -1,3 +1,4 @@
+// Import Chakra UI elements
 import { Text, Center, Heading } from '@chakra-ui/react'
 import { SimpleGrid, Box, Image, Badge, Tooltip } from '@chakra-ui/react'
 import { Card, CardHeader, CardBody, CardFooter } from '@chakra-ui/react'
@@ -14,19 +15,19 @@ import {
 function getFrameColor(numStars) {
   var frameBgColor = ''
   switch(numStars) {
-    case 1:
+    case '1':
       frameBgColor = 'gray.200'
       break
-    case 2:
+    case '2':
       frameBgColor = 'gray.200'
       break
-    case 3:
+    case '3':
       frameBgColor = '#bce5f7'
       break
-    case 4:
+    case '4':
       frameBgColor = '#feff7f'
       break
-    case 5:
+    case '5':
       frameBgColor = '#f7ceee'
       break
     default:
@@ -35,16 +36,11 @@ function getFrameColor(numStars) {
   return frameBgColor
 }
 
-
-
-
-
 // Renders a single roll element
 function DisplayRolledCharacter(props) {
   var frameBgColor = 'White'
   if (props.character.numStars === undefined)
     console.log("U DONE FUCKED UP IN src\\app\\gacha\\wastemoney\\display-roll.js:DisplayRolledCharacter: no numStars property")
-
   return (
     <Tooltip hasArrow label={
         "(".concat(props.character.numStars,"*) ",props.character.name)} aria-label='A tooltip'>
@@ -52,8 +48,8 @@ function DisplayRolledCharacter(props) {
         <Image
           height='100px'
           width='200px'
-          src='https://picsum.photos/200'
-          alt='Green double couch with wooden legs'
+          src={props.character.imgLink}
+          alt={props.character.name}
         />
         <Box p='2'>
           <Tag size='sm' bg={getFrameColor(props.character.numStars)} borderRadius='full'>
@@ -72,6 +68,9 @@ function DisplayRolledCharacter(props) {
 
 // Renders 10 rolls from a given list of rolled characters
 export function DisplayRolls(props) {
+  if (props.rolls === undefined) {
+    return
+  }
   return (
     <SimpleGrid columns={5} spacing={2} maxWidth='800px'>
       {props.rolls.map(function(character, idx){

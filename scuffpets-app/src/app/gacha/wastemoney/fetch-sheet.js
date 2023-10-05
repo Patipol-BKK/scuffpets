@@ -1,6 +1,10 @@
 import axios from 'axios'
-import fs from 'fs'
+import { promises as fs } from 'fs';
+import util  from 'util'
 
+const readFile = util.promisify(fs.readFile);
+
+// Fetch data from google sheets
 export async function fetchGoogleSheets() {
   const SHEET_ID = process.env.GACHA_SHEET_ID
   const SHEET_NAME = 'gachas'
@@ -10,7 +14,7 @@ export async function fetchGoogleSheets() {
   // Get sheet values
   axios.get(url)
   .then(function (response) {
-      // Handle success
+      // Handle fetch success
       var sheetResponse = response.data.values
       
       var oneStars = []
@@ -18,6 +22,9 @@ export async function fetchGoogleSheets() {
       var threeStars = []
       var fourStars = []
       var fiveStars = []
+
+      // Append characters to their star ratings list
+      // ***Currently no character imgs yet, using a placeholder atm***
       for (var idx = 1; idx < sheetResponse.length; idx++) {
         var characterData = sheetResponse[idx].slice(0, 4)
         var formattedCharacterData = {
@@ -25,7 +32,7 @@ export async function fetchGoogleSheets() {
           numStars: characterData[3],
           type1: characterData[1],
           type2: characterData[2],
-          imgLink: undefined
+          imgLink: 'https://images-ext-2.discordapp.net/external/8yASqYbZYWRCIK_14U-tZwCglJZ7DGNrWB94DASuRTk/https/cdn.discordapp.com/emojis/955646373246672966.png?width=160&height=160'
         }
         switch(characterData[3]) {
           case '1':
@@ -55,24 +62,10 @@ export async function fetchGoogleSheets() {
         fourStars: fourStars,
         fiveStars: fiveStars
       }
-      console.log(oneStars)
 
+      // Save character list as a local file
       fs.writeFile(process.env.GACHA_POOL_PATH, JSON.stringify(pool), (err) => {
           if (err) console.log('Error writing file:', err)
       })
-  })
-}
-
-export function getPool(callback) {
-  fs.readFile(process.env.GACHA_POOL_PATH, 'utf8', (err, jsonString) => {
-      if (err) {
-          return
-      }
-      try {
-          const pool = JSON.parse(jsonString)
-          callback(pool)
-  } catch(err) {
-          console.log('Error parsing JSON string:', err)
-      }
   })
 }

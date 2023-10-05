@@ -1,3 +1,5 @@
+import pool from './pool.json'
+
 // Gacha rate defs as integer percents. 1* rate = 100-2*-3*.
 const TWO_STAR_PERCENT = 25;
 const THREE_STAR_PERCENT = 5;
@@ -40,7 +42,7 @@ function getOutcomes(x, arr) {
 }
 // Get an array of the available gachas for a given star level.
 // TODO: replace with actual lookups.
-function getGachaPool(numStars, pool) {
+function getGachaPool(numStars) {
   const oneStars = [
     "Neuro-sama (Ethical)",
     "Ninomae Ina'nis",
@@ -105,70 +107,8 @@ function getGachaPool(numStars, pool) {
       console.log("U DONE FUCKED UP IN src\\app\\gacha\\wastemoney\\roll.js:getGachaPool: numStars was %d", numStars);
   }
 }
-const testRoll = [
-  {
-    name: 'apple soup',
-    numStars: 1,
-    type1: 'apple',
-    type2: 'soup'
-  },
-  {
-    name: 'Teemo',
-    numStars: 2,
-    type1: 'Prophet',
-    type2: 'Prophet'
-  },
-  {
-    name: 'Mud Golem',
-    numStars: 3,
-    type1: '123456',
-    type2: '751'
-  },
-  {
-    name: 'Bad Apple!!',
-    numStars: 4,
-    type1: 'abbbb',
-    type2: '751'
-  },
-  {
-    name: 'Amish Made Wooden Horse',
-    numStars: 5,
-    type1: 'abbbb',
-    type2: '751'
-  },
-  {
-    name: 'Bad Apple!!',
-    numStars: 1,
-    type1: 'abbbb',
-    type2: '751'
-  },
-  {
-    name: 'Bad Apple!!',
-    numStars: 1,
-    type1: 'abbbb',
-    type2: '751'
-  },
-  {
-    name: 'Bad Apple!!',
-    numStars: 1,
-    type1: 'abbbb',
-    type2: '751'
-  },
-  {
-    name: 'Bad Apple!!',
-    numStars: 1,
-    type1: 'abbbb',
-    type2: '751'
-  },
-  {
-    name: 'Bad Apple!!',
-    numStars: 1,
-    type1: 'abbbb',
-    type2: '751'
-  },
-]
 
-export { get10Roll, testRoll }
+export { get10Roll }
 
 /* ----- TESTS ----- */
 /* 
