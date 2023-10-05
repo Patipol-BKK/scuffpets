@@ -47,6 +47,7 @@ export default function Page() {
             raidTime = 'xx:xx'
             dailyBonusCurrent = '3'
             dailyBonusMax = '15'
+            larger='69,420'
           />
         </GridItem>
         <GridItem area={'nav'}>
