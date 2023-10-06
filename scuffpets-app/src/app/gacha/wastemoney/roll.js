@@ -41,7 +41,6 @@ function getOutcomes(x, arr) {
   return arr.slice(0, x);
 }
 // Get an array of the available gachas for a given star level.
-// TODO: replace with actual lookups.
 function getGachaPool(numStars) {
   const oneStars = [
     "Neuro-sama (Ethical)",
@@ -103,6 +102,10 @@ function getGachaPool(numStars) {
       return pool.twoStars;
     case 3:
       return pool.threeStars;
+    case 4:
+      return pool.fourStars;
+    case 5:
+      return pool.fiveStars;
     default:
       console.log("U DONE FUCKED UP IN src\\app\\gacha\\wastemoney\\roll.js:getGachaPool: numStars was %d", numStars);
   }

@@ -1,8 +1,20 @@
 import axios from 'axios'
-import { promises as fs } from 'fs';
+import fs from 'fs';
 import util  from 'util'
 
-const readFile = util.promisify(fs.readFile);
+const defaultImage = 'https://images-ext-2.discordapp.net/external/8yASqYbZYWRCIK_14U-tZwCglJZ7DGNrWB94DASuRTk/https/cdn.discordapp.com/emojis/955646373246672966.png?width=160&height=160'
+
+function findGachaImage(dir, name) {
+  var extensions = ['.png', '.jpg', '.jpeg', '.webp']
+  for (var idx = 0; idx < extensions.length; idx++) {
+    var fullPath = dir.concat('/', name, extensions[idx])
+    if (fs.existsSync(fullPath)) {
+      return fullPath.slice(8)
+    }
+  }
+  console.log("U DONE FUCKED UP IN src\\app\\gacha\\wastemoney\\fetch-sheet.js:findGachaImage: Image for ".concat(name," not found"))
+  return defaultImage
+}
 
 // Fetch data from google sheets
 export async function fetchGoogleSheets() {
@@ -32,7 +44,7 @@ export async function fetchGoogleSheets() {
           numStars: characterData[3],
           type1: characterData[1],
           type2: characterData[2],
-          imgLink: 'https://images-ext-2.discordapp.net/external/8yASqYbZYWRCIK_14U-tZwCglJZ7DGNrWB94DASuRTk/https/cdn.discordapp.com/emojis/955646373246672966.png?width=160&height=160'
+          imgLink: findGachaImage('./public/imgs/gachapics', characterData[0])
         }
         switch(characterData[3]) {
           case '1':

@@ -45,7 +45,7 @@ export function RollButton(props) {
       videoElement.target.playVideo()
 
       // Rolls 10 characters and trigger callback function
-      console.log(props.onPressed(get10Roll()))
+      props.onPressed(get10Roll())
     }
 
     // Display error msg, video player is still loading

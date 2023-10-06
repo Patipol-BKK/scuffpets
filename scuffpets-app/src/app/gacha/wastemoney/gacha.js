@@ -22,7 +22,6 @@ export function Gacha(props) {
   // Updates currentRoll and rerender DisplayRoll to show current characters
   function handleRoll(rolledCharacters) {
     currentRoll = rolledCharacters
-    console.log(rolledCharacters)
     setKey(currentKey => currentKey+1)
   }
 
