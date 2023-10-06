@@ -1,15 +1,20 @@
 "use client"
 
-import { useState } from "react"
-import YouTube from 'react-youtube'
+// Import Chakra UI elements
+import { Box, Image, useToast } from '@chakra-ui/react'
 
-import { Box, Image } from '@chakra-ui/react'
+import YouTube from 'react-youtube'
+import { useState } from 'react'
 
 import { get10Roll } from './roll.js'
 
-let videoElement = null;
+// Initialize bgm player
+let videoElement = undefined
 
 export function RollButton(props) {
+
+
+  // Define const for controlling bgm player
   const [playing, setPlaying] = useState(true)
 
   // Create Youtube player config for playing gacha bgm 
@@ -21,20 +26,38 @@ export function RollButton(props) {
       }
     }
 
+  // Initialize toast for displaying alert/error msgs
+  const toast = useToast()
+
+  // Callback when video player has been loaded
   const _onReady = (event) => {
     // Loads video player for bgm
     videoElement = event;
     console.log('ready')
   }
 
+  // Handles roll button press
   function handleRoll() {
     console.log('you\'ve wasted money')
-    // plays bgm via react-youtube
-    // TODO: make roll function wait until the player is loaded
-    videoElement.target.setVolume(20)
-    videoElement.target.playVideo()
-    console.log(props.pool)
-    // props.onPressed(get10Roll(props.pool))
+    // Plays bgm via react-youtube
+    if (videoElement !== undefined) {
+      videoElement.target.setVolume(20)
+      videoElement.target.playVideo()
+
+      // Rolls 10 characters and trigger callback function
+      console.log(props.onPressed(get10Roll()))
+    }
+
+    // Display error msg, video player is still loading
+    else {
+      toast({
+          title: 'still loading, plz don\'t spam',
+          description: ">>>>>>:(",
+          status: 'error',
+          duration: 9000,
+          isClosable: true,
+        })
+    }
   }
 
   return (

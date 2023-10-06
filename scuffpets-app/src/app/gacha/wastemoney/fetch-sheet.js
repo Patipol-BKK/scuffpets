@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { promises as fs } from 'fs';
-import util from 'util'
+import util  from 'util'
 
 const readFile = util.promisify(fs.readFile);
 
@@ -19,7 +19,7 @@ export async function fetchGoogleSheets() {
 
   // Get sheet values
   axios.get(url)
-    .then(function (response) {
+  .then(function (response) {
       // Handle fetch success
       var sheetResponse = response.data.values
 
