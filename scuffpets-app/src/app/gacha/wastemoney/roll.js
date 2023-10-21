@@ -1,4 +1,5 @@
 import pool from './pool.json'
+import { getRandomDistinct } from '@/app/util';
 
 // Gacha rate defs as integer percents. 1* rate = 100-2*-3*.
 const TWO_STAR_PERCENT = 25;
@@ -18,83 +19,15 @@ function get10Roll(pool) {
     else num1++;
   }
 
-  ret.push(...getOutcomes(num1, getGachaPool(1, pool)));
-  ret.push(...getOutcomes(num2, getGachaPool(2, pool)));
-  ret.push(...getOutcomes(num3, getGachaPool(3, pool)));
+  ret.push(...getRandomDistinct(num1, getGachaPool(1, pool)));
+  ret.push(...getRandomDistinct(num2, getGachaPool(2, pool)));
+  ret.push(...getRandomDistinct(num3, getGachaPool(3, pool)));
 
   return ret;
 }
 
-// Gets x distinct entries from arr, and returns them in a list. Mutates input.
-function getOutcomes(x, arr) {
-  if (x > arr.length) {
-    console.log("U DONE FUCKED UP IN src\\app\\gacha\\wastemoney\\roll.js:getOutcomes: tried to get %d outcomes but only %d possibilities!", x, arr.length);
-    return;
-  }
-  // Fisher-Yates shuffle
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    const temp = arr[i];
-    arr[i] = arr[j];
-    arr[j] = temp;
-  }
-  return arr.slice(0, x);
-}
 // Get an array of the available gachas for a given star level.
 function getGachaPool(numStars) {
-  const oneStars = [
-    "Neuro-sama (Ethical)",
-    "Ninomae Ina'nis",
-    "Akai Haato",
-    "Amogus",
-    "Teemo",
-    "Epona",
-    "Optimus Prime (Car)",
-    "Lincoln Memorial",
-    "Piranha Plant",
-    "Pinto Beans",
-    "Mud Golem",
-    "Bad Apple!!",
-    "Amish Made Wooden Horse",
-    "Yugi Muto"
-  ];
-
-
-  const twoStars = [
-    "La+ Darkness",
-    "Takanashi Kiara",
-    "Rainbow Dash",
-    "Popteen Superstar",
-    "The Iron Giant",
-    "OceanGate Titan",
-    "Ceres Fauna",
-    "Cloud Mallow",
-    "Dwayne Johnson",
-    "Band of Horses",
-    "Bloop",
-    "Ebifrion",
-    "Malphite",
-    "Orange Mushroom",
-    "Geico",
-    "Grandpa"
-  ];
-
-
-  const threeStars = [
-    "Shirakami Fubuki",
-    "Shishiro Botan",
-    "Tendou Aris",
-    "Joe Birden",
-    "Koseki Bijou",
-    "Bastion",
-    "Twilight Sparkle",
-    "Gundam",
-    "The Titanic",
-    "Dante from the Devil May Cry Series",
-    "Joey from Brooklyn",
-    "James Garfield"
-  ];
-
   switch (numStars) {
     case 1:
       return pool.oneStars;
