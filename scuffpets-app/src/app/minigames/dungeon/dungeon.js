@@ -16,16 +16,25 @@ const POOR_GPT_VERSION = "gpt-3.5-turbo"
 
 // Success rate modifiers
 const LUCK_MID = 50;
-const LUCK_MID_SAVE_CHANCE = 0.15;
-const LUCK_MID_CRITICAL_CHANCE = 0.05;
+const LUCK_SAVE_CHANCE = 0.3;
+const LUCK_CRITICAL_CHANCE = 0.1;
+const LUCK_FAIL_CHANCE = 0.1;
+const LUCK_POSITIVE_DENOMINATOR = 3;
+const LUCK_NEGATIVE_DENOMINATOR = 4;
+const HEAL_INSTEAD_OF_LOOT_CHANCE = 0.5;
 const DANGER_FAIL_CHANCE_PER_LEVEL = 0.1;
 const DANGER_LOOT_RATE_PER_LEVEL = 0.05;
+const INJURY_SAVE_MAX_CHANCE = 0.7;
+const INJURY_SAVE_MAX_DAMAGE = 3;
+
+const GAME_LENGTH_ENCOUNTERS = 8;
 
 class DungeonGame {
   constructor() {
-    // loop on while(game.gameOver())?
+    // loop on while(game.alive())?
     this.alive = true;
-    this.error = false;
+    this.win = false;
+    this.deathFlag = false;
 
     this.prompt = generatePrompt();
     this.encounters = 0;
@@ -34,8 +43,13 @@ class DungeonGame {
     this.optionDangers;
     this.loot = 0; // TODO: divide loot into loot table levels
 
-    this.health = 10;
+    this.maxHealth = 10;
+    this.curHealth = 10;
     this.luck = 69;
+    this.luckPositiveBonus = Math.ceil(((this.luck - LUCK_MID) / LUCK_MID) / LUCK_POSITIVE_DENOMINATOR, 0)
+    this.luckNegativeBonus = Math.ceil(((LUCK_MID - this.luck) / LUCK_MID) / LUCK_NEGATIVE_DENOMINATOR, 0)
+
+    this.log = ""
   }
 
   // TODO: add in a Gacha to send in for luck and HP maybe
@@ -46,34 +60,75 @@ class DungeonGame {
     this._parseOptions(splitOutput[1]);
     this.encounters++;
 
-    readyForInput();
+    this.readyForInput();
   }
 
   readyForInput() {
     // TODO: idk do something??
   }
 
-  // Accepts player input as the index (of this.currentOptions)
+  // Accepts player input in the form of the index (of this.currentOptions)
   input(choiceIndex) {
-    let prompt = "The player chose " + this.currentOptions[choiceIndex];
+    let prompt = "The player chose \"" + this.currentOptions[choiceIndex] + "\" ";
 
+    prompt += this._rollSuccessfulness;
+    if (!this.deathFlag) {
+      prompt += (" " + this._addMixin);
+    }
 
+    this._nextEncounter(prompt);
+
+    this.readyForInput();
+  }
+
+  _nextEncounter(prompt) {
+    this.log += ("\nEncounter " + this.encounters + ":\n");
+    this.log += (this.currentText + "\n");
+    this.log += (prompt + "\n");
+
+    let rawOutput = ""; 
+    
+    if (this.deathFlag) {
+      rawOutput = this._tryToSpeakToRobot(prompt, 1, POOR_GPT_VERSION, RICH_GPT_VERSION);
+      this.log += rawOutput;
+      this.currentText = rawOutput;
+      this.alive = false;
+      return;
+    }
+
+    if (this.encounters === GAME_LENGTH_ENCOUNTERS) {
+      prompt += " The player successfully completes their original goal."
+      this._winGame();
+      return;
+    }
+
+    if (this.encounters === (GAME_LENGTH_ENCOUNTERS - 1)) {
+      prompt += " The player is close to completing their original goal."
+    }
+
+    rawOutput = this._tryToSpeakToRobot(prompt, 1, POOR_GPT_VERSION, RICH_GPT_VERSION);
+    let splitOutput = this._parseEncounter(rawOutput);
+    this.currentText = splitOutput[0];
+    this._parseOptions(splitOutput[1]);
+    this.encounters++;
+    return;
   }
 
   typingError() {
-    this.health--;
-    if (this.health === 0) {
+    this.curHealth--;
+    if (this.curHealth === 0) {
       this.currentText = this.suddenDeathText();
+      this.deathFlag = true;
       this.alive = false;
     }
     return;
   }
 
   // Generate death text without any additional input, options, etc.
-  suddenDeathText() {
+  _suddenDeathText() {
     // TODO: add more death prompts, perhaps with mixins
     try {
-      this.currentText = this._tryToSpeakToRobot(
+      return this._tryToSpeakToRobot(
         "While trying to make a decision, there was some sort of accident and the player suddenly dies.",
         1,
         POOR_GPT_VERSION,
@@ -82,6 +137,17 @@ class DungeonGame {
     } catch (error) {
       this.currentText = "YOU DONE FUCKED UP AND DIED :(";
     }
+  }
+
+  _winGame(prompt) {
+    try {
+      this.currentText = this._tryToSpeakToRobot(prompt, 1, POOR_GPT_VERSION, RICH_GPT_VERSION);
+    } catch (error) {
+      this.currentText = "You win! (and something broke but you win woooo)";
+    }
+
+    log += ("\n " + this.currentText);
+    this.win = true;
   }
 
   // Tries to speak to the robot with a retry on any errors.
@@ -138,7 +204,7 @@ class DungeonGame {
     return s.split(OPTIONS_SECTION_MARKER);
   }
 
-  // Attempts to parse the text of options into an extremely scuffed data structure of [ ["text", danger], [...], ... ]
+  // Parses options into this.optionsText and this.optionDangers (mutates)
   _parseOptions(optionsText) {
     let ret = [];
     let curText = optionsText;
@@ -178,20 +244,67 @@ class DungeonGame {
   _rollSuccessfulness(danger) {
     // First, we roll for either a + or - outcome based purely on danger.
     //   If + outcome, we roll Luck
-    //     at a very high value, we get a critical success
+    //     at a very low value, we get an unlucky fail
+    //     at a high value, we get a critical success
     //       if HP is < 70%, we roll for a chance to heal for 30%
     //       if we fail the roll or HP is high, we get loot
-    //     at a very low value, we get an unlucky fail
     //   If - outcome
     //     we roll Luck for a luck save.
     //     If luck save fails, we roll HP for an injury save (lower chance as hp is lower)
     //     If both of these fail, the player dies.
     //   If the player didn't die, we roll a loot check based on the danger.
-
+    let ret = ""
     let success = Math.random() > (DANGER_FAIL_CHANCE_PER_LEVEL * danger) ? true : false;
 
     if (success) {
-
+      if (Math.random() < (LUCK_FAIL_CHANCE + this.luckNegativeBonus)) {
+        ret += "The player almost succeeds, but they were unlucky and fail.";
+      } else {
+        if (Math.random() < (LUCK_CRITICAL_CHANCE + this.luckPositiveBonus)) {
+          if (this.curHealth <= 7  // TODO: make this an actual measurement
+            && Math.random() < HEAL_INSTEAD_OF_LOOT_CHANCE) {
+            ret += "The player succeeds and luckily finds a way to restore some health.";
+          } else {
+            this.loot++;
+            ret += "The player succeeds and luckily finds some loot.";
+          }
+        } else {
+          ret += "The player succeeds."
+        }
+      }
+    } else {
+      if (Math.random() < (LUCK_SAVE_CHANCE + this.luckPositiveBonus)) {
+        ret += "The player almost failed, but was saved by a stroke of luck.";
+      } else if (this.curHealth > 1 &&
+        Math.random() < (INJURY_SAVE_MAX_CHANCE * (this.curHealth / this.maxHealth))) {
+        let dmg = Math.ceil(Math.random() * INJURY_SAVE_MAX_DAMAGE)
+        this.curHealth > dmg ? this.curHealth -= dmg : this.curHealth = 1;
+        ret += "The player succeeds but was injured."
+      } else {
+        "The player fails and dies."
+        this.deathFlag = true;
+        return ret;
+      }
     }
+
+    if (Math.random() < (DANGER_LOOT_RATE_PER_LEVEL * danger)) {
+      ret += " The player also finds some loot in the process.";
+    }
+
+    return ret;
+  }
+
+  _addMixin() {
+    let ret = "";
+    let roll = Math.random();
+    if (roll < MIXIN_RATE) {
+      ret += "The outcome or next encounter involves \"";
+      if (roll < MIXIN_RARE_RATE) {
+        ret += MIXINS_RARE[Math.floor(Math.random() * MIXINS_RARE.length)] + "\".";
+      } else {
+        ret += MIXINS_COMMON[Math.floor(Math.random() * MIXINS_COMMON.length)] + "\".";
+      }
+    }
+    return ret;
   }
 }
