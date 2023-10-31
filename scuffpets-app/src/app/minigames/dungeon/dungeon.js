@@ -16,9 +16,9 @@ const POOR_GPT_VERSION = "gpt-3.5-turbo"
 
 // Success rate modifiers
 const LUCK_MID = 50;
-const LUCK_SAVE_CHANCE = 0.3;
+const LUCK_SAVE_CHANCE = 0.2;
 const LUCK_CRITICAL_CHANCE = 0.1;
-const LUCK_FAIL_CHANCE = 0.1;
+const LUCK_FAIL_CHANCE = 0.01;
 const LUCK_POSITIVE_DENOMINATOR = 3;
 const LUCK_NEGATIVE_DENOMINATOR = 4;
 const HEAL_INSTEAD_OF_LOOT_CHANCE = 0.5;
@@ -29,7 +29,7 @@ const INJURY_SAVE_MAX_DAMAGE = 3;
 
 const GAME_LENGTH_ENCOUNTERS = 8;
 
-class DungeonGame {
+export class DungeonGame {
   constructor() {
     // loop on while(game.alive())?
     this.alive = true;
@@ -39,15 +39,15 @@ class DungeonGame {
     this.prompt = generatePrompt();
     this.encounters = 0;
     this.currentText;
-    this.currentOptions;
-    this.optionDangers;
+    this.currentOptions = [];
+    this.optionDangers = {};
     this.loot = 0; // TODO: divide loot into loot table levels
 
     this.maxHealth = 10;
     this.curHealth = 10;
     this.luck = 69;
-    this.luckPositiveBonus = Math.ceil(((this.luck - LUCK_MID) / LUCK_MID) / LUCK_POSITIVE_DENOMINATOR, 0)
-    this.luckNegativeBonus = Math.ceil(((LUCK_MID - this.luck) / LUCK_MID) / LUCK_NEGATIVE_DENOMINATOR, 0)
+    this.luckPositiveBonus = Math.max(((this.luck - LUCK_MID) / LUCK_MID) / LUCK_POSITIVE_DENOMINATOR, 0)
+    this.luckNegativeBonus = Math.max(((LUCK_MID - this.luck) / LUCK_MID) / LUCK_NEGATIVE_DENOMINATOR, 0)
 
     this.log = ""
   }
@@ -71,39 +71,42 @@ class DungeonGame {
   input(choiceIndex) {
     let prompt = "The player chose \"" + this.currentOptions[choiceIndex] + "\" ";
 
-    prompt += this._rollSuccessfulness;
+    prompt += this._rollSuccessfulness(this.optionDangers[choiceIndex]);
     if (!this.deathFlag) {
-      prompt += (" " + this._addMixin);
+      prompt += (" " + this._addMixin());
     }
-
+    console.log("\nnextPrompt = " + prompt);
     this._nextEncounter(prompt);
 
     this.readyForInput();
   }
 
   _nextEncounter(prompt) {
+    this.currentOptions = []
+
     this.log += ("\nEncounter " + this.encounters + ":\n");
     this.log += (this.currentText + "\n");
+
+    if (this.encounters === GAME_LENGTH_ENCOUNTERS) {
+      prompt += " The player successfully completes their original goal."
+      this._winGame(prompt);
+      return;
+    }
+
+    if (this.encounters === (GAME_LENGTH_ENCOUNTERS - 1)) {
+      prompt += " The player is close to completing their original goal."
+    }
+
     this.log += (prompt + "\n");
 
-    let rawOutput = ""; 
-    
+    let rawOutput = "";
+
     if (this.deathFlag) {
       rawOutput = this._tryToSpeakToRobot(prompt, 1, POOR_GPT_VERSION, RICH_GPT_VERSION);
       this.log += rawOutput;
       this.currentText = rawOutput;
       this.alive = false;
       return;
-    }
-
-    if (this.encounters === GAME_LENGTH_ENCOUNTERS) {
-      prompt += " The player successfully completes their original goal."
-      this._winGame();
-      return;
-    }
-
-    if (this.encounters === (GAME_LENGTH_ENCOUNTERS - 1)) {
-      prompt += " The player is close to completing their original goal."
     }
 
     rawOutput = this._tryToSpeakToRobot(prompt, 1, POOR_GPT_VERSION, RICH_GPT_VERSION);
@@ -146,7 +149,7 @@ class DungeonGame {
       this.currentText = "You win! (and something broke but you win woooo)";
     }
 
-    log += ("\n " + this.currentText);
+    this.log += ("\n" + prompt + "\n" + this.currentText);
     this.win = true;
   }
 
@@ -171,14 +174,16 @@ class DungeonGame {
 
   _speakToRobot(prompt, gptVersion) {
     // TODO: Call API and simply return the entire response
+    return "text: The neon lights of the city cast a sickly glow on the rain-slicked streets as you make your way through the Orc Chasm, a notorious district in the underbelly of the metropolis. The Angelic Rock, a towering fortress of steel and concrete, looms ominously in your rearview mirror. In your pocket, the family heirloom, a small, intricately carved artifact known only by its serial number, 751668390455803994, pulses with a strange energy. You can almost feel ExoVox\'s dark influence reaching out for it, his cybernetic minions scouring the city for any trace of you. \n\nSuddenly, a group of heavily armed gang members, their faces hidden behind grotesque orc masks, step out from the shadows, blocking your path. Their leader, a hulking brute with a cybernetic arm, points directly at you. \"Hand over the artifact,\" he growls, \"and we might let you live.\"\n\noptions:\n1. Try to negotiate with the gang members. (3)\n2. Attempt to run past them. (4)\n3. Use the artifact\'s energy to fight them off. (5)\n4. Surrender the artifact to them. (1)";
   }
 
   _validateEncounter(encounter) {
     if (!encounter.includes(TEXT_SECTION_MARKER) || !encounter.includes(OPTIONS_SECTION_MARKER)) {
+      console.log("Missing Text or Options section!");
       throw new Error("ParseError");
     }
 
-    if (encounter.countOccurrences(TEXT_SECTION_MARKER) != 1 || encounter.countOccurrences(OPTIONS_SECTION_MARKER) != 1) {
+    if (countOccurrences(encounter, TEXT_SECTION_MARKER) != 1 || countOccurrences(encounter, OPTIONS_SECTION_MARKER) != 1) {
       throw new Error("ParseError");
     }
 
@@ -212,24 +217,23 @@ class DungeonGame {
     for (let i = 0; i < 4; i++) {
       let splitStr = `${i + 1}.`
 
-      splitResult = curText.split(splitStr);
+      let splitResult = curText.split(splitStr);
       curText = splitResult[1];
 
       // When we split on "1.", splitResult[0] is the empty string
-      if (i = 0) continue;
+      if (i === 0) continue;
+      this.currentOptions.push(splitResult[0]);
 
-      this.optionsText.push(splitResult[0]);
-
-      if (i = 3) {
-        this.optionsText.push(splitResult[1]);
+      if (i === 3) {
+        this.currentOptions.push(splitResult[1]);
       }
     }
 
     // Split out the danger measurement
     for (let i = 0; i < 4; i++) {
-      let rawOption = this.optionsText[i];
+      let rawOption = this.currentOptions[i];
       let splitResult = rawOption.split("(");
-      this.optionsText[i] = (splitResult[0]);
+      this.currentOptions[i] = (splitResult[0]);
 
       let num = parseInt(splitResult[1].charAt(0));
       if (isNaN(num) || (num < 1 && num > 5)) {
@@ -254,11 +258,17 @@ class DungeonGame {
     //     If both of these fail, the player dies.
     //   If the player didn't die, we roll a loot check based on the danger.
     let ret = ""
-    let success = Math.random() > (DANGER_FAIL_CHANCE_PER_LEVEL * danger) ? true : false;
-
+    let success = Math.random() > (DANGER_FAIL_CHANCE_PER_LEVEL * danger);
     if (success) {
       if (Math.random() < (LUCK_FAIL_CHANCE + this.luckNegativeBonus)) {
-        ret += "The player almost succeeds, but they were unlucky and fail.";
+        ret += "The player almost succeeds, but they were unlucky and fail";
+        if (this._rollInjurySave()) {
+          ret += ", getting injured but surviving."
+        } else {
+          ret += " and die."
+          this.deathFlag = true;
+          return ret;
+        }
       } else {
         if (Math.random() < (LUCK_CRITICAL_CHANCE + this.luckPositiveBonus)) {
           if (this.curHealth <= 7  // TODO: make this an actual measurement
@@ -275,13 +285,10 @@ class DungeonGame {
     } else {
       if (Math.random() < (LUCK_SAVE_CHANCE + this.luckPositiveBonus)) {
         ret += "The player almost failed, but was saved by a stroke of luck.";
-      } else if (this.curHealth > 1 &&
-        Math.random() < (INJURY_SAVE_MAX_CHANCE * (this.curHealth / this.maxHealth))) {
-        let dmg = Math.ceil(Math.random() * INJURY_SAVE_MAX_DAMAGE)
-        this.curHealth > dmg ? this.curHealth -= dmg : this.curHealth = 1;
+      } else if (this._rollInjurySave()) {
         ret += "The player succeeds but was injured."
       } else {
-        "The player fails and dies."
+        ret += "The player fails and dies."
         this.deathFlag = true;
         return ret;
       }
@@ -292,6 +299,18 @@ class DungeonGame {
     }
 
     return ret;
+  }
+
+  // Returns false if injury save is impossible or fails, otherwise returns
+  // true and performs all the requisite actions.
+  _rollInjurySave() {
+    if (this.curHealth <= 1) return false;
+    if (Math.random() < (INJURY_SAVE_MAX_CHANCE * (this.curHealth / this.maxHealth))) {
+      let dmg = Math.ceil(Math.random() * INJURY_SAVE_MAX_DAMAGE);
+      this.curHealth > dmg ? this.curHealth -= dmg : this.curHealth = 1;
+      return true;
+    }
+    return false;
   }
 
   _addMixin() {
