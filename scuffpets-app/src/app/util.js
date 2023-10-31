@@ -1,3 +1,18 @@
+// Counts the number of times subString occurs in bigString.
+export function countOccurrences(bigString, subString) {
+  let count = 0;
+  let index = 0;
+  while (true) {
+    index = bigString.indexOf(subString, index);
+    if (index === -1) {
+      break;
+    }
+    count++;
+    index += subString.length;
+  }
+  return count;
+}
+
 // Gets x distinct entries from arr, and returns them in a list.
 export function getRandomDistinct(x, arrayInput) {
   if (x > arrayInput.length) {
