@@ -1,6 +1,7 @@
 import { generatePrompt } from "./prompt";
 import { countOccurrences } from "@/app/util";
-import { MIXINS_COMMON, MIXINS_RARE } from "./dungeon-defs";
+import { MIXINS_COMMON, MIXINS_RARE, SYSTEM_PROMPT } from "./dungeon-defs";
+import OpenAI from "openai"
 
 const TEXT_SECTION_MARKER = "text:"
 const OPTIONS_SECTION_MARKER = "options:"
@@ -29,14 +30,19 @@ const INJURY_SAVE_MAX_DAMAGE = 3;
 
 const GAME_LENGTH_ENCOUNTERS = 8;
 
+const openai = new OpenAI({
+  apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
+  dangerouslyAllowBrowser: true // TODO: look at this
+});
+
 export class DungeonGame {
-  constructor() {
+  constructor(prompt) {
     // loop on while(game.alive())?
     this.alive = true;
     this.win = false;
     this.deathFlag = false;
 
-    this.prompt = generatePrompt();
+    this.prompt = prompt;
     this.encounters = 0;
     this.currentText;
     this.currentOptions = [];
@@ -50,11 +56,13 @@ export class DungeonGame {
     this.luckNegativeBonus = Math.max(((LUCK_MID - this.luck) / LUCK_MID) / LUCK_NEGATIVE_DENOMINATOR, 0)
 
     this.log = ""
+
+    this.messages = [{ 'role': 'system', 'content': SYSTEM_PROMPT }]
   }
 
   // TODO: add in a Gacha to send in for luck and HP maybe
-  newGame() {
-    let rawOutput = this._tryToSpeakToRobot(this.prompt, 1, RICH_GPT_VERSION, RICH_GPT_VERSION);
+  async newGame() {
+    let rawOutput = await this._tryToSpeakToRobot(this.prompt, 1, RICH_GPT_VERSION, RICH_GPT_VERSION);
     let splitOutput = this._parseEncounter(rawOutput);
     this.currentText = splitOutput[0];
     this._parseOptions(splitOutput[1]);
@@ -68,7 +76,7 @@ export class DungeonGame {
   }
 
   // Accepts player input in the form of the index (of this.currentOptions)
-  input(choiceIndex) {
+  async input(choiceIndex) {
     let prompt = "The player chose \"" + this.currentOptions[choiceIndex] + "\" ";
 
     prompt += this._rollSuccessfulness(this.optionDangers[choiceIndex]);
@@ -76,12 +84,12 @@ export class DungeonGame {
       prompt += (" " + this._addMixin());
     }
     console.log("\nnextPrompt = " + prompt);
-    this._nextEncounter(prompt);
+    await this._nextEncounter(prompt);
 
     this.readyForInput();
   }
 
-  _nextEncounter(prompt) {
+  async _nextEncounter(prompt) {
     this.currentOptions = []
 
     this.log += ("\nEncounter " + this.encounters + ":\n");
@@ -102,14 +110,14 @@ export class DungeonGame {
     let rawOutput = "";
 
     if (this.deathFlag) {
-      rawOutput = this._tryToSpeakToRobot(prompt, 1, POOR_GPT_VERSION, RICH_GPT_VERSION);
+      rawOutput = await this._tryToSpeakToRobot(prompt, 1, POOR_GPT_VERSION, RICH_GPT_VERSION);
       this.log += rawOutput;
       this.currentText = rawOutput;
       this.alive = false;
       return;
     }
 
-    rawOutput = this._tryToSpeakToRobot(prompt, 1, POOR_GPT_VERSION, RICH_GPT_VERSION);
+    rawOutput = await this._tryToSpeakToRobot(prompt, 1, POOR_GPT_VERSION, RICH_GPT_VERSION);
     let splitOutput = this._parseEncounter(rawOutput);
     this.currentText = splitOutput[0];
     this._parseOptions(splitOutput[1]);
@@ -117,10 +125,10 @@ export class DungeonGame {
     return;
   }
 
-  typingError() {
+  async typingError() {
     this.curHealth--;
     if (this.curHealth === 0) {
-      this.currentText = this.suddenDeathText();
+      this.currentText = await this.suddenDeathText();
       this.deathFlag = true;
       this.alive = false;
     }
@@ -128,10 +136,10 @@ export class DungeonGame {
   }
 
   // Generate death text without any additional input, options, etc.
-  _suddenDeathText() {
+  async _suddenDeathText() {
     // TODO: add more death prompts, perhaps with mixins
     try {
-      return this._tryToSpeakToRobot(
+      return await this._tryToSpeakToRobot(
         "While trying to make a decision, there was some sort of accident and the player suddenly dies.",
         1,
         POOR_GPT_VERSION,
@@ -142,9 +150,9 @@ export class DungeonGame {
     }
   }
 
-  _winGame(prompt) {
+  async _winGame(prompt) {
     try {
-      this.currentText = this._tryToSpeakToRobot(prompt, 1, POOR_GPT_VERSION, RICH_GPT_VERSION);
+      this.currentText = await this._tryToSpeakToRobot(prompt, 1, POOR_GPT_VERSION, RICH_GPT_VERSION);
     } catch (error) {
       this.currentText = "You win! (and something broke but you win woooo)";
     }
@@ -156,13 +164,19 @@ export class DungeonGame {
   // Tries to speak to the robot with a retry on any errors.
   // After the first try, uses the provided fallback gpt version.
   // Returns the raw output or throws an error if all retries fail.
-  _tryToSpeakToRobot(prompt, retries, gptVersion, fallback) {
+  async _tryToSpeakToRobot(prompt, retries, gptVersion, fallback) {
+    this.messages.push({ 'role': 'user', 'content': prompt });
+
     let retryCount = 0;
     let use_version = gptVersion;
     while (retryCount <= retries) {
       try {
-        let rawOutput = this._speakToRobot(prompt, use_version);
+        let response = await this._speakToRobot(prompt, use_version);
+        let message = response.choices[0].message;
+        let rawOutput = message.content;
+        console.log(rawOutput);
         this._validateEncounter(rawOutput);
+        this.messages.push(message);
         return rawOutput;
       } catch (error) {
         retryCount++;
@@ -172,9 +186,13 @@ export class DungeonGame {
     throw new Error("ParseError");
   }
 
-  _speakToRobot(prompt, gptVersion) {
-    // TODO: Call API and simply return the entire response
-    return "text: The neon lights of the city cast a sickly glow on the rain-slicked streets as you make your way through the Orc Chasm, a notorious district in the underbelly of the metropolis. The Angelic Rock, a towering fortress of steel and concrete, looms ominously in your rearview mirror. In your pocket, the family heirloom, a small, intricately carved artifact known only by its serial number, 751668390455803994, pulses with a strange energy. You can almost feel ExoVox\'s dark influence reaching out for it, his cybernetic minions scouring the city for any trace of you. \n\nSuddenly, a group of heavily armed gang members, their faces hidden behind grotesque orc masks, step out from the shadows, blocking your path. Their leader, a hulking brute with a cybernetic arm, points directly at you. \"Hand over the artifact,\" he growls, \"and we might let you live.\"\n\noptions:\n1. Try to negotiate with the gang members. (3)\n2. Attempt to run past them. (4)\n3. Use the artifact\'s energy to fight them off. (5)\n4. Surrender the artifact to them. (1)";
+  async _speakToRobot(gptVersion) {
+    return await openai.chat.completions.create(
+      {
+        messages: this.messages,
+        model: 'gpt-3.5-turbo',
+      }
+    )
   }
 
   _validateEncounter(encounter) {
