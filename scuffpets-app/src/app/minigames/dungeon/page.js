@@ -1,7 +1,10 @@
+"use client"
+
 import { DungeonGame } from "./dungeon.js"
+import { generatePrompt } from "./prompt.js";
+import React, { useState } from "react";
 
 export default function Page() {
-  // var res1 = "text: The neon lights of the city cast a sickly glow on the rain-slicked streets as you make your way through the Orc Chasm, a notorious district in the underbelly of the metropolis. The Angelic Rock, a towering fortress of steel and concrete, looms ominously in your rearview mirror. In your pocket, the family heirloom, a small, intricately carved artifact known only by its serial number, 751668390455803994, pulses with a strange energy. You can almost feel ExoVox\'s dark influence reaching out for it, his cybernetic minions scouring the city for any trace of you. \n\nSuddenly, a group of heavily armed gang members, their faces hidden behind grotesque orc masks, step out from the shadows, blocking your path. Their leader, a hulking brute with a cybernetic arm, points directly at you. \"Hand over the artifact,\" he growls, \"and we might let you live.\"\n\noptions:\n1. Try to negotiate with the gang members. (3)\n2. Attempt to run past them. (4)\n3. Use the artifact\'s energy to fight them off. (5)\n4. Surrender the artifact to them. (1)"
   // var game = new DungeonGame()
   // game.newGame();
   // console.log(game);
@@ -22,8 +25,43 @@ export default function Page() {
 
   // console.log(outcomes);
 
+  const [promptText, setPromptText] = useState('prompt text');
+  const [gameObjText, setGameObjText] = useState('');
+
+  var game;
+
+  const createNewGame = async () => {
+    game = new DungeonGame(promptText);
+    await game.newGame();
+    setGameObjText(updateGameStateText());
+  }
+
+  const handlePromptButtonClick = () => {
+    const result = generatePrompt();
+    setPromptText(result);
+  }
+
+  function updateGameStateText() {
+    return JSON.stringify(game, (key, value) => {
+      if (key === 'log' || key === 'prompt') {
+        return undefined; // Exclude the property from the string
+      }
+      return value;
+    }, 2);
+  }
+
   return (<div>
-    <p>This is your dungeon page. Open the browser console to see the output.</p>
+    <button onClick={handlePromptButtonClick}> Generate a prompt </button>
+    <div>
+      <p>Prompt: </p>
+      <div>{promptText}</div>
+    </div>
+    <button onClick={createNewGame}> New game </button>
+
+
+
+    <div><p>Game state:</p></div>
+    <div><pre>{gameObjText}</pre></div>
   </div>
   );
 };
