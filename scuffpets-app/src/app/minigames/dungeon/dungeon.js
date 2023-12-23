@@ -187,10 +187,11 @@ export class DungeonGame {
   }
 
   async _speakToRobot(gptVersion) {
+    console.log("Sending OpenAI request.");
     return await openai.chat.completions.create(
       {
         messages: this.messages,
-        model: 'gpt-3.5-turbo',
+        model: POOR_GPT_VERSION,
       }
     )
   }

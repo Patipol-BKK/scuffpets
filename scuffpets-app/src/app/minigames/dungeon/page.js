@@ -27,11 +27,10 @@ export default function Page() {
 
   const [promptText, setPromptText] = useState('prompt text');
   const [gameObjText, setGameObjText] = useState('');
-
-  var game;
+  const [game, setGame] = useState(null);
 
   const createNewGame = async () => {
-    game = new DungeonGame(promptText);
+    setGame(new DungeonGame(promptText));
     await game.newGame();
     setGameObjText(updateGameStateText());
   }
@@ -50,6 +49,13 @@ export default function Page() {
     }, 2);
   }
 
+  const pickAPipe = async () => {
+    console.log("pickapipe obj: " + game);
+    if (game.currentOptions === undefined) throw new Error();
+    await game.input(0);
+    setGameObjText(updateGameStateText());
+  }
+
   return (<div>
     <button onClick={handlePromptButtonClick}> Generate a prompt </button>
     <div>
@@ -58,7 +64,12 @@ export default function Page() {
     </div>
     <button onClick={createNewGame}> New game </button>
 
-
+    <div>
+      <button onClick={pickAPipe}> Option 1 </button>
+      {/* <button onClick={pickAPipe(1)}> Option 2 </button>
+      <button onClick={pickAPipe(2)}> Option 3 </button>
+      <button onClick={pickAPipe(3)}> Option 4 </button> */}
+    </div>
 
     <div><p>Game state:</p></div>
     <div><pre>{gameObjText}</pre></div>
